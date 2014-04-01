@@ -16,7 +16,7 @@ echo "
   MM   `Mb.   A'     VML `Mb.     MM   MM     ,M 
 .JMML. .JMM..AMA.   .AMMA. `\"bmmmdPY .JMMmmmmMMM 
                                                  
-To execute PHP commands: phpexec date();
+To execute PHP commands: phpexec echo 'test';
 
 ";
 
